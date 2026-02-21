@@ -144,6 +144,14 @@ if (!$error && $massaction == 'confirm_presend') {
 	$listofobjectref = array();
 	$contactidtosend = array();
 	$attachedfilesThirdpartyObj = array();
+	$uploadedfilesfromform = array('paths' => array(), 'names' => array(), 'mimes' => array());
+	$trackidfromform = GETPOST('trackid', 'aZ09');
+	if (!empty($trackidfromform)) {
+		include_once DOL_DOCUMENT_ROOT.'/core/class/html.formmail.class.php';
+		$formmailforattachments = new FormMail($db);
+		$formmailforattachments->trackid = $trackidfromform;
+		$uploadedfilesfromform = $formmailforattachments->get_attached_files();
+	}
 	$oneemailperrecipient = (GETPOSTINT('oneemailperrecipient') ? 1 : 0);
 	$thirdparty = null;
 
@@ -605,6 +613,12 @@ if (!$error && $massaction == 'confirm_presend') {
 					$filepath = $attachedfiles['paths'];
 					$filename = $attachedfiles['names'];
 					$mimetype = $attachedfiles['mimes'];
+
+				if (!empty($uploadedfilesfromform['paths'])) {
+					$filepath = array_merge($filepath, $uploadedfilesfromform['paths']);
+					$filename = array_merge($filename, $uploadedfilesfromform['names']);
+					$mimetype = array_merge($mimetype, $uploadedfilesfromform['mimes']);
+				}
 
 					// Define the trackid when emails sent from the mass action
 					if ($oneemailperrecipient) {
