@@ -15,3 +15,4 @@ MassSubscriptionBatchEmailsPerRunHelp=0 bedeutet unbegrenzt. Empfohlen: Limit se
 MassSubscriptionBatchEmailDelayMs=Verzögerung zwischen E-Mails (Millisekunden)
 MassSubscriptionBatchEmailDelayMsHelp=Kleine Pause zwischen gesendeten E-Mails, um SMTP-Drosselung zu vermeiden (z. B. 200 ms).
 MassSubInvoiceEmailRateLimitedCount=%s E-Mails wurden übersprungen, weil das Limit pro Lauf (%s) erreicht wurde. Aktion erneut ausführen, um verbleibende E-Mails zu senden.
+MassSubInvoiceEmailLimitExceededAbort=Lauf abgebrochen: %s Mitglieder ausgewählt, aber das E-Mail-Limit pro Lauf ist %s. Auswahl verkleinern oder Limit in den Moduleinstellungen erhöhen.

@@ -15,3 +15,4 @@ MassSubscriptionBatchEmailsPerRunHelp=Set to 0 for unlimited. Recommended: keep 
 MassSubscriptionBatchEmailDelayMs=Delay between emails (milliseconds)
 MassSubscriptionBatchEmailDelayMsHelp=Small delay between each sent email to reduce SMTP throttling risk (for example 200 ms).
 MassSubInvoiceEmailRateLimitedCount=%s emails were skipped because the per-run limit (%s) was reached. Run the action again to send remaining emails.
+MassSubInvoiceEmailLimitExceededAbort=Batch aborted: %s members selected but the email-per-run limit is %s. Reduce selection or increase the limit in module setup.

@@ -62,6 +62,10 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 		}
 		$emailmaxperrun = max(0, (int) getDolGlobalInt('MASSSUBSCRIPTIONBATCH_EMAILS_PER_RUN', 100));
 		$emaildelayms = max(0, (int) getDolGlobalInt('MASSSUBSCRIPTIONBATCH_EMAIL_DELAY_MS', 200));
+		if ($sendmailenabled && $emailmaxperrun > 0 && count($toselect) > $emailmaxperrun) {
+			setEventMessages($langs->trans('MassSubInvoiceEmailLimitExceededAbort', count($toselect), $emailmaxperrun), null, 'errors');
+			return 0;
+		}
 		$templatelabel = getDolGlobalString('ADHERENT_EMAIL_TEMPLATE_SUBSCRIPTION');
 		$formmail = new FormMail($this->db);
 		$templatecache = array();
@@ -73,7 +77,6 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 		$nbsentemail = 0;
 		$nbemailfailed = 0;
 		$nbemailmissing = 0;
-		$nbemaillimited = 0;
 		$nberrors = 0;
 		$datesubscription = dol_now();
 
@@ -188,9 +191,6 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 			}
 			if ($nbemailmissing > 0) {
 				setEventMessages($langs->trans('MassSubInvoiceEmailMissingCount', $nbemailmissing), null, 'warnings');
-			}
-			if ($nbemaillimited > 0) {
-				setEventMessages($langs->trans('MassSubInvoiceEmailRateLimitedCount', $nbemaillimited, $emailmaxperrun), null, 'warnings');
 			}
 		}
 		if ($nberrors > 0) {
