@@ -21,7 +21,7 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 
 	public function addMoreMassActions($parameters, &$object, &$action, $hookmanager)
 	{
-		global $conf, $langs, $user;
+		global $conf, $langs, $massaction, $user;
 
 		$context = isset($parameters['currentcontext']) ? $parameters['currentcontext'] : (isset($parameters['context']) ? $parameters['context'] : '');
 		if (!in_array('memberlist', explode(':', (string) $context))) {
@@ -90,7 +90,7 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 
 	public function doActions($parameters, &$object, &$action, $hookmanager)
 	{
-		global $conf, $langs, $user;
+		global $conf, $langs, $massaction, $user;
 
 		if ($action === 'confirm_presend' && !getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL')) {
 			setEventMessages($langs->trans('MassSubSendMailDisabled'), null, 'errors');
@@ -106,14 +106,16 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 			$trackid = GETPOST('trackid', 'aZ09');
 			$uploaddir = $conf->user->dir_output.'/'.$user->id.'/temp';
 			dol_add_file_process($uploaddir, 0, 0, 'addedfile', '', null, $trackid, 0);
-			$action = 'list';
+			$massaction = 'presend';
+			$action = '';
 			return 1;
 		}
 		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL') && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD') && GETPOSTINT('removedfile') > 0) {
 			require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
 			$trackid = GETPOST('trackid', 'aZ09');
 			dol_remove_file_process(GETPOSTINT('removedfile'), 0, 1, $trackid);
-			$action = 'list';
+			$massaction = 'presend';
+			$action = '';
 			return 1;
 		}
 
