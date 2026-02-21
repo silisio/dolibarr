@@ -33,7 +33,90 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 
 		$langs->load('masssubscriptionbatch@masssubscriptionbatch');
 		$this->resprints = '<option value="masssubinvoiceemail">'.img_picto('', 'payment', 'class="pictofixedwidth"').$langs->trans('MassSubInvoiceEmailAction').'</option>';
+		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_SETENDDATE')) {
+			$this->resprints .= '<option value="presetsubscriptionenddate">'.img_picto('', 'date', 'class="pictofixedwidth"').$langs->trans('MassSubSetEndDateAction').'</option>';
+		}
 		return 0;
+	}
+
+
+
+	public function doPreMassActions($parameters, &$object, &$action, $hookmanager)
+	{
+		global $form, $langs, $user;
+
+		if (($parameters['massaction'] ?? '') !== 'presetsubscriptionenddate') {
+			return 0;
+		}
+		if (!$user->hasRight('adherent', 'creer') || !$user->hasRight('masssubscriptionbatch', 'run')) {
+			setEventMessages($langs->trans('NotEnoughPermissions'), null, 'errors');
+			return 0;
+		}
+
+		$toselect = is_array($parameters['toselect'] ?? null) ? $parameters['toselect'] : array();
+		$formquestion = array(
+			array('type' => 'date', 'name' => 'msb_enddate', 'label' => $langs->trans('MassSubSetEndDateField'), 'value' => dol_time_plus_duree(dol_now(), -1, 'd')),
+		);
+		$this->resprints = $form->formconfirm($_SERVER['PHP_SELF'], $langs->trans('MassSubSetEndDateConfirmTitle'), $langs->trans('MassSubSetEndDateConfirmQuestion', count($toselect)), 'setsubscriptionenddate', $formquestion, 1, 0, 200, 500, 1);
+
+		return 0;
+	}
+
+	public function doActions($parameters, &$object, &$action, $hookmanager)
+	{
+		global $langs, $user;
+
+		if ($action !== 'setsubscriptionenddate' || GETPOST('confirm', 'aZ09') !== 'yes') {
+			return 0;
+		}
+		if (!getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_SETENDDATE')) {
+			setEventMessages($langs->trans('MassSubSetEndDateDisabled'), null, 'errors');
+			return 1;
+		}
+		if (!$user->hasRight('adherent', 'creer') || !$user->hasRight('masssubscriptionbatch', 'run')) {
+			setEventMessages($langs->trans('NotEnoughPermissions'), null, 'errors');
+			return 1;
+		}
+
+		$day = GETPOSTINT('msb_enddateday');
+		$month = GETPOSTINT('msb_enddatemonth');
+		$year = GETPOSTINT('msb_enddateyear');
+		$dateend = dol_mktime(0, 0, 0, $month, $day, $year);
+		if (empty($dateend)) {
+			setEventMessages($langs->trans('MassSubSetEndDateInvalid'), null, 'errors');
+			return 1;
+		}
+
+		$toselect = GETPOST('toselect', 'array');
+		$toselect = is_array($toselect) ? $toselect : array();
+
+		$member = new Adherent($this->db);
+		$nbupdated = 0;
+		$nberrors = 0;
+		$this->db->begin();
+		foreach ($toselect as $id) {
+			if ($member->fetch((int) $id) <= 0) {
+				$nberrors++;
+				continue;
+			}
+			$res = $member->setValueFrom('datefin', dol_print_date($dateend, '%Y-%m-%d'), '', null, 'date');
+			if ($res > 0) {
+				$nbupdated++;
+			} else {
+				$nberrors++;
+			}
+		}
+
+		if ($nberrors > 0) {
+			$this->db->rollback();
+			setEventMessages($langs->trans('MassSubSetEndDateErrors', $nberrors), null, 'errors');
+		} else {
+			$this->db->commit();
+			setEventMessages($langs->trans('MassSubSetEndDateDone', $nbupdated, dol_print_date($dateend, 'day')), null, 'mesgs');
+		}
+
+		$action = 'list';
+		return 1;
 	}
 
 	public function doMassActions($parameters, &$object, &$action, $hookmanager)
