@@ -48,7 +48,13 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 	{
 		global $form, $langs, $user;
 
-		if (($parameters['massaction'] ?? '') !== 'presetsubscriptionenddate') {
+		$massaction = $parameters['massaction'] ?? '';
+		if ($massaction === 'presend' && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL')) {
+			$this->resprints = '<script>document.addEventListener("DOMContentLoaded",function(){var cb=document.querySelector("input[name=\"addmaindoc\"]");if(cb){cb.checked=false;cb.disabled=true;}var n=document.createElement("div");n.className="opacitymedium small";n.textContent='.json_encode($langs->transnoentitiesnoconv('MassSubSendMailNoMainDocNote')).';var row=cb?cb.closest(".tagtr"):null;if(row){row.appendChild(n);}});</script>';
+			return 0;
+		}
+
+		if ($massaction !== 'presetsubscriptionenddate') {
 			return 0;
 		}
 		if (!$user->hasRight('adherent', 'creer') || !$user->hasRight('masssubscriptionbatch', 'run')) {
@@ -73,6 +79,10 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 			setEventMessages($langs->trans('MassSubSendMailDisabled'), null, 'errors');
 			$action = 'list';
 			return 1;
+		}
+		if ($action === 'confirm_presend' && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL')) {
+			$_POST['addmaindoc'] = 0;
+			$_REQUEST['addmaindoc'] = 0;
 		}
 
 		if ($action !== 'setsubscriptionenddate' || GETPOST('confirm', 'aZ09') !== 'yes') {
