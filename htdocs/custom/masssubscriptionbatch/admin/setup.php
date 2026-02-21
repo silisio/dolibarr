@@ -16,6 +16,7 @@ $action = GETPOST('action', 'aZ09');
 if ($action == 'setdefaultsend') {
 	dolibarr_set_const($db, 'MASSSUBSCRIPTIONBATCH_DEFAULT_SENDMAIL', GETPOSTINT('MASSSUBSCRIPTIONBATCH_DEFAULT_SENDMAIL'), 'yesno', 0, '', $conf->entity);
 	dolibarr_set_const($db, 'MASSSUBSCRIPTIONBATCH_ENABLE_SETENDDATE', GETPOSTINT('MASSSUBSCRIPTIONBATCH_ENABLE_SETENDDATE'), 'yesno', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL', GETPOSTINT('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL'), 'yesno', 0, '', $conf->entity);
 	dolibarr_set_const($db, 'MASSSUBSCRIPTIONBATCH_EMAILS_PER_RUN', max(0, GETPOSTINT('MASSSUBSCRIPTIONBATCH_EMAILS_PER_RUN')), 'integer', 0, '', $conf->entity);
 	dolibarr_set_const($db, 'MASSSUBSCRIPTIONBATCH_EMAIL_DELAY_MS', max(0, GETPOSTINT('MASSSUBSCRIPTIONBATCH_EMAIL_DELAY_MS')), 'integer', 0, '', $conf->entity);
 	setEventMessages($langs->trans('SetupSaved'), null, 'mesgs');
@@ -50,6 +51,14 @@ print '<td>';
 print '<input type="checkbox" name="MASSSUBSCRIPTIONBATCH_ENABLE_SETENDDATE" value="1"'.(getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_SETENDDATE') ? ' checked' : '').'>';
 print '</td>';
 print '</tr>';
+
+print '<tr class="oddeven">';
+print '<td>'.$langs->trans('MassSubscriptionBatchEnableMassMailMassAction').'</td>';
+print '<td>';
+print '<input type="checkbox" name="MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL" value="1"'.(getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL') ? ' checked' : '').'>';
+print '</td>';
+print '</tr>';
+
 print '<tr class="oddeven">';
 print '<td>'.$langs->trans('MassSubscriptionBatchEmailsPerRun').'<br><span class="opacitymedium">'.$langs->trans('MassSubscriptionBatchEmailsPerRunHelp').'</span></td>';
 print '<td><input type="number" min="0" name="MASSSUBSCRIPTIONBATCH_EMAILS_PER_RUN" value="'.getDolGlobalInt('MASSSUBSCRIPTIONBATCH_EMAILS_PER_RUN', 100).'" class="maxwidth100"></td>';

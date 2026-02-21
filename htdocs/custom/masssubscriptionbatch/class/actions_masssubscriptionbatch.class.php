@@ -36,6 +36,9 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_SETENDDATE')) {
 			$this->resprints .= '<option value="presetsubscriptionenddate">'.img_picto('', 'date', 'class="pictofixedwidth"').$langs->trans('MassSubSetEndDateAction').'</option>';
 		}
+		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL')) {
+			$this->resprints .= '<option value="presend">'.img_picto('', 'email', 'class="pictofixedwidth"').$langs->trans('MassSubSendMailAction').'</option>';
+		}
 		return 0;
 	}
 
@@ -65,6 +68,12 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 	public function doActions($parameters, &$object, &$action, $hookmanager)
 	{
 		global $langs, $user;
+
+		if ($action === 'confirm_presend' && !getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL')) {
+			setEventMessages($langs->trans('MassSubSendMailDisabled'), null, 'errors');
+			$action = 'list';
+			return 1;
+		}
 
 		if ($action !== 'setsubscriptionenddate' || GETPOST('confirm', 'aZ09') !== 'yes') {
 			return 0;

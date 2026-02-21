@@ -25,3 +25,6 @@ MassSubSetEndDateInvalid=Invalid end date.
 MassSubSetEndDateDone=Subscription end date updated for %s members (new end date: %s).
 MassSubSetEndDateErrors=%s members could not be updated.
 MassSubSetEndDateDisabled=This mass action is disabled in module setup.
+MassSubscriptionBatchEnableMassMailMassAction=Enable mass action to send an email to selected members
+MassSubSendMailAction=Send email to selected members
+MassSubSendMailDisabled=Mass mailing action is disabled in module setup.
