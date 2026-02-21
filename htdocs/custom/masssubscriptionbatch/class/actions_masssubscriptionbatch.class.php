@@ -58,11 +58,13 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 			$placeholdersList = json_encode('__MEMBER_FULLNAME__, __MEMBER_FIRSTNAME__, __MEMBER_LASTNAME__, __MEMBER_EMAIL__, __MEMBER_ID__, __MEMBER_TYPE__, __MEMBER_LAST_SUBSCRIPTION_DATE_END__');
 			$this->resprints = '<script>document.addEventListener("DOMContentLoaded",function(){'
 				.'var cb=document.querySelector("input[name=\"addmaindocfile\"]");if(cb){cb.checked=false;cb.disabled=true;}'
-				.'var row=cb?cb.closest(".tagtr"):null;var n=document.createElement("div");n.className="opacitymedium small";n.textContent='.$note.';if(row){row.appendChild(n);}'
-				.'if(row && '.$allowupload.'){var wrap=document.createElement("div");wrap.className="margintoponly";'
+				.'var row=cb?(cb.closest(".tagtr")||cb.closest("tr")):null;'
+				.'var target=row?((row.querySelector(".tagtd:last-child")||row.querySelector("td:last-child")||row)):null;'
+				.'var n=document.createElement("div");n.className="opacitymedium small";n.textContent='.$note.';if(target){target.appendChild(n);}'
+				.'if(target && '.$allowupload.'){var wrap=document.createElement("div");wrap.className="margintoponly";'
 				.'wrap.innerHTML="<input type=\"file\" class=\"flat\" id=\"addedfile\" name=\"addedfile[]\" multiple> '
 				.'<input type=\"submit\" class=\"button smallpaddingimp\" id=\"addfile\" name=\"addfile\" value="+'.$addfilelabel.'+"/> '
-				.'<span class=\"opacitymedium\">"+'.$uploadhint.'+"</span>";row.appendChild(wrap);}'
+				.'<span class=\"opacitymedium\">"+'.$uploadhint.'+"</span>";target.appendChild(wrap);}'
 				.'var body=document.getElementById("message");if(body){var box=document.createElement("div");box.className="opacitymedium small margintop";'
 				.'box.innerHTML="<b>"+'.$placeholdersTitle.'+"</b><br><code>"+'.$placeholdersList.'+"</code>";body.parentNode.insertBefore(box, body);}'
 				.'});</script>';
