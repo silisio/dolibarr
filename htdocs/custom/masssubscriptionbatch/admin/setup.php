@@ -1,9 +1,9 @@
 <?php
 /* Copyright (C) 2026 */
 
-require '../../../main.inc.php';
+require '../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/masssubscriptionbatch/lib/masssubscriptionbatch.lib.php';
+require_once dol_buildpath('/masssubscriptionbatch/lib/masssubscriptionbatch.lib.php', 0);
 
 $langs->loadLangs(array('admin', 'members', 'masssubscriptionbatch@masssubscriptionbatch'));
 
@@ -28,7 +28,7 @@ print load_fiche_titre($langs->trans($page_name), $linkback, 'title_setup');
 $head = masssubscriptionbatchAdminPrepareHead();
 print dol_get_fiche_head($head, 'settings', $langs->trans('Module106500Name'), -1, 'payment');
 
-print '<form method="POST" action="'.dol_escape_htmltag($_SERVER['PHP_SELF']).'">';
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
 print '<input type="hidden" name="token" value="'.newToken().'">';
 print '<input type="hidden" name="action" value="setdefaultsend">';
 
