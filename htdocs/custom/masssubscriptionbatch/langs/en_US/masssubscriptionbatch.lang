@@ -29,3 +29,5 @@ MassSubscriptionBatchEnableMassMailMassAction=Enable mass action to send an emai
 MassSubSendMailAction=Send email to selected members
 MassSubSendMailDisabled=Mass mailing action is disabled in module setup.
 MassSubSendMailNoMainDocNote=Main-document attachment is disabled for member mass mail because members have no generated main PDF in this context.
+MassSubscriptionBatchEnableMassMailUpload=Allow uploading custom attachments in selected-members mass mail
+MassSubSendMailUploadHint=You can upload one or more files to attach to all outgoing emails in this batch.

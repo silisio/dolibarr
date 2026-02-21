@@ -21,7 +21,7 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 
 	public function addMoreMassActions($parameters, &$object, &$action, $hookmanager)
 	{
-		global $langs, $user;
+		global $conf, $langs, $user;
 
 		$context = isset($parameters['currentcontext']) ? $parameters['currentcontext'] : (isset($parameters['context']) ? $parameters['context'] : '');
 		if (!in_array('memberlist', explode(':', (string) $context))) {
@@ -50,7 +50,18 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 
 		$massaction = $parameters['massaction'] ?? '';
 		if ($massaction === 'presend' && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL')) {
-			$this->resprints = '<script>document.addEventListener("DOMContentLoaded",function(){var cb=document.querySelector("input[name=\"addmaindoc\"]");if(cb){cb.checked=false;cb.disabled=true;}var n=document.createElement("div");n.className="opacitymedium small";n.textContent='.json_encode($langs->transnoentitiesnoconv('MassSubSendMailNoMainDocNote')).';var row=cb?cb.closest(".tagtr"):null;if(row){row.appendChild(n);}});</script>';
+			$allowupload = (int) getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD');
+			$note = json_encode($langs->transnoentitiesnoconv('MassSubSendMailNoMainDocNote'));
+			$addfilelabel = json_encode($langs->transnoentitiesnoconv('MailingAddFile'));
+			$uploadhint = json_encode($langs->transnoentitiesnoconv('MassSubSendMailUploadHint'));
+			$this->resprints = '<script>document.addEventListener("DOMContentLoaded",function(){'
+				.'var cb=document.querySelector("input[name=\"addmaindocfile\"]");if(cb){cb.checked=false;cb.disabled=true;}'
+				.'var row=cb?cb.closest(".tagtr"):null;var n=document.createElement("div");n.className="opacitymedium small";n.textContent='.$note.';if(row){row.appendChild(n);}'
+				.'if(row && '.$allowupload.'){var wrap=document.createElement("div");wrap.className="margintoponly";'
+				.'wrap.innerHTML="<input type=\"file\" class=\"flat\" id=\"addedfile\" name=\"addedfile[]\" multiple> '
+				.'<input type=\"submit\" class=\"button smallpaddingimp\" id=\"addfile\" name=\"addfile\" value="+'.$addfilelabel.'+"/> '
+				.'<span class=\"opacitymedium\">"+'.$uploadhint.'+"</span>";row.appendChild(wrap);}'
+				.'});</script>';
 			return 0;
 		}
 
@@ -73,7 +84,7 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 
 	public function doActions($parameters, &$object, &$action, $hookmanager)
 	{
-		global $langs, $user;
+		global $conf, $langs, $user;
 
 		if ($action === 'confirm_presend' && !getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL')) {
 			setEventMessages($langs->trans('MassSubSendMailDisabled'), null, 'errors');
@@ -81,8 +92,23 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 			return 1;
 		}
 		if ($action === 'confirm_presend' && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL')) {
-			$_POST['addmaindoc'] = 0;
-			$_REQUEST['addmaindoc'] = 0;
+			$_POST['addmaindocfile'] = 0;
+			$_REQUEST['addmaindocfile'] = 0;
+		}
+		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL') && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD') && GETPOSTISSET('addfile')) {
+			require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
+			$trackid = GETPOST('trackid', 'aZ09');
+			$uploaddir = $conf->user->dir_output.'/'.$user->id.'/temp';
+			dol_add_file_process($uploaddir, 0, 0, 'addedfile', '', null, $trackid, 0);
+			$action = 'list';
+			return 1;
+		}
+		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL') && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD') && GETPOSTINT('removedfile') > 0) {
+			require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
+			$trackid = GETPOST('trackid', 'aZ09');
+			dol_remove_file_process(GETPOSTINT('removedfile'), 0, 1, $trackid);
+			$action = 'list';
+			return 1;
 		}
 
 		if ($action !== 'setsubscriptionenddate' || GETPOST('confirm', 'aZ09') !== 'yes') {
