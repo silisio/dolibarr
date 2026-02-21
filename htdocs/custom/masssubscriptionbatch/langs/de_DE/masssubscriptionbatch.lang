@@ -31,3 +31,4 @@ MassSubSendMailDisabled=Die Massenmail-Aktion ist in den Moduleinstellungen deak
 MassSubSendMailNoMainDocNote=Das Anhängen des Hauptdokuments ist für die Massenmail von Mitgliedern deaktiviert, da in diesem Kontext kein generiertes Haupt-PDF existiert.
 MassSubscriptionBatchEnableMassMailUpload=Upload eigener Anhänge in der Massenmail für ausgewählte Mitglieder erlauben
 MassSubSendMailUploadHint=Sie können eine oder mehrere Dateien hochladen, die an alle ausgehenden E-Mails dieses Laufs angehängt werden.
+MassSubSendMailPlaceholdersTitle=Verfügbare Platzhalter für Massenmail an ausgewählte Mitglieder
