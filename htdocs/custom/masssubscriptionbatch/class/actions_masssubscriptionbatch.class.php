@@ -103,18 +103,22 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 		}
 		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL') && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD') && GETPOSTISSET('addfile')) {
 			$hasfile = false;
+			$sourcefilekey = 'addedfile';
 			$uploadedfilekeys = array('addedfile', 'addedfile[]');
 			foreach ($uploadedfilekeys as $uploadedfilekey) {
 				if (!empty($_FILES[$uploadedfilekey]) && isset($_FILES[$uploadedfilekey]['error'])) {
 					if (is_array($_FILES[$uploadedfilekey]['error'])) {
-						foreach ($_FILES[$uploadedfilekey]['error'] as $uploaderror) {
-							if ((int) $uploaderror !== 4) { // UPLOAD_ERR_NO_FILE
+						$tmpnames = isset($_FILES[$uploadedfilekey]['tmp_name']) && is_array($_FILES[$uploadedfilekey]['tmp_name']) ? $_FILES[$uploadedfilekey]['tmp_name'] : array();
+						foreach ($_FILES[$uploadedfilekey]['error'] as $idx => $uploaderror) {
+							if ((int) $uploaderror === 0 && !empty($tmpnames[$idx])) {
 								$hasfile = true;
+								$sourcefilekey = $uploadedfilekey;
 								break 2;
 							}
 						}
-					} elseif ((int) $_FILES[$uploadedfilekey]['error'] !== 4) {
+					} elseif ((int) $_FILES[$uploadedfilekey]['error'] === 0 && !empty($_FILES[$uploadedfilekey]['tmp_name'])) {
 						$hasfile = true;
+						$sourcefilekey = $uploadedfilekey;
 						break;
 					}
 				}
@@ -123,7 +127,7 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 				require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
 				$trackid = GETPOST('trackid', 'aZ09');
 				$uploaddir = $conf->user->dir_output.'/'.$user->id.'/temp';
-				dol_add_file_process($uploaddir, 0, 0, 'addedfile', '', null, $trackid, 0);
+				dol_add_file_process($uploaddir, 0, 0, $sourcefilekey, '', null, $trackid, 0);
 			} else {
 				setEventMessages($langs->trans('MassSubSendMailSelectFileFirst'), null, 'warnings');
 			}
