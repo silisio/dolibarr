@@ -126,11 +126,21 @@ if (!$error && isset($toselect) && is_array($toselect) && count($toselect) > $ma
 	$error++;
 }
 
-if (!$error && $massaction == 'confirm_presend' && !GETPOST('sendmail')) {  // If we do not choose button send (for example when we change template or limit), we must not send email, but keep on send email form
+if (!$error && $massaction == 'confirm_presend' && !GETPOST('sendmail') && !GETPOST('addfile', 'alpha') && !GETPOST('removedfile') && !GETPOST('removeAll') && !GETPOST('modelselected')) {  // If we do not choose button send (for example when we change template or limit), we must not send email, but keep on send email form
 	$massaction = 'presend';
 }
 
 if (!$error && $massaction == 'confirm_presend') {
+	include_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
+	$trackidforfiles = GETPOST('trackid', 'aZ09');
+	$upload_dir_tmp = $conf->user->dir_output.'/'.$user->id.'/temp';
+	if (GETPOST('addfile', 'alpha')) {
+		dol_add_file_process($upload_dir_tmp, 1, 0, 'addedfile', '', null, $trackidforfiles, 0);
+	}
+	if (GETPOST('removedfile') && !GETPOST('removeAll')) {
+		dol_remove_file_process(GETPOSTINT('removedfile'), 0, 1, $trackidforfiles);
+	}
+
 	$resaction = '';
 	$nbsent = 0;
 	$nbignored = 0;
