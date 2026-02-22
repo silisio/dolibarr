@@ -59,7 +59,7 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 			$this->resprints = '<script>document.addEventListener("DOMContentLoaded",function(){'
 				.'var cb=document.querySelector("input[name=\"addmaindocfile\"]");if(cb){cb.checked=false;cb.disabled=true;}'
 				.'var row=cb?(cb.closest(".tagtr")||cb.closest("tr")):null;'
-				.'var target=row?((row.querySelector(".tagtd:last-child")||row.querySelector("td:last-child")||row)):null;'
+				.'var target=row?((row.querySelector(".tagtd:last-child")||row.querySelector("td:last-child")||row)):document.getElementById("mailform");'
 				.'var n=document.createElement("div");n.className="opacitymedium small";n.textContent='.$note.';if(target){target.appendChild(n);}'
 				.'if(target && '.$allowupload.'){var wrap=document.createElement("div");wrap.className="margintoponly";'
 				.'wrap.innerHTML="<input type=\"file\" class=\"flat\" id=\"addedfile\" name=\"addedfile[]\" multiple> '
@@ -102,10 +102,22 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 			$_REQUEST['addmaindocfile'] = 0;
 		}
 		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL') && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD') && GETPOSTISSET('addfile')) {
-			require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
-			$trackid = GETPOST('trackid', 'aZ09');
-			$uploaddir = $conf->user->dir_output.'/'.$user->id.'/temp';
-			dol_add_file_process($uploaddir, 0, 0, 'addedfile', '', null, $trackid, 0);
+			$hasfile = false;
+			if (!empty($_FILES['addedfile']) && isset($_FILES['addedfile']['name'])) {
+				if (is_array($_FILES['addedfile']['name'])) {
+					$hasfile = (count(array_filter($_FILES['addedfile']['name'])) > 0);
+				} else {
+					$hasfile = !empty($_FILES['addedfile']['name']);
+				}
+			}
+			if ($hasfile) {
+				require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
+				$trackid = GETPOST('trackid', 'aZ09');
+				$uploaddir = $conf->user->dir_output.'/'.$user->id.'/temp';
+				dol_add_file_process($uploaddir, 0, 0, 'addedfile', '', null, $trackid, 0);
+			} else {
+				setEventMessages($langs->trans('MassSubSendMailSelectFileFirst'), null, 'warnings');
+			}
 			$massaction = 'presend';
 			$action = '';
 			return 1;
