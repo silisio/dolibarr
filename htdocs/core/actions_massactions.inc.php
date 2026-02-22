@@ -126,11 +126,21 @@ if (!$error && isset($toselect) && is_array($toselect) && count($toselect) > $ma
 	$error++;
 }
 
-if (!$error && $massaction == 'confirm_presend' && !GETPOST('sendmail')) {  // If we do not choose button send (for example when we change template or limit), we must not send email, but keep on send email form
+if (!$error && $massaction == 'confirm_presend' && !GETPOST('sendmail') && !GETPOST('addfile', 'alpha') && !GETPOST('removedfile') && !GETPOST('removeAll') && !GETPOST('modelselected')) {  // If we do not choose button send (for example when we change template or limit), we must not send email, but keep on send email form
 	$massaction = 'presend';
 }
 
 if (!$error && $massaction == 'confirm_presend') {
+	include_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
+	$trackidforfiles = GETPOST('trackid', 'aZ09');
+	$upload_dir_tmp = $conf->user->dir_output.'/'.$user->id.'/temp';
+	if (GETPOST('addfile', 'alpha')) {
+		dol_add_file_process($upload_dir_tmp, 1, 0, 'addedfile', '', null, $trackidforfiles, 0);
+	}
+	if (GETPOST('removedfile') && !GETPOST('removeAll')) {
+		dol_remove_file_process(GETPOSTINT('removedfile'), 0, 1, $trackidforfiles);
+	}
+
 	$resaction = '';
 	$nbsent = 0;
 	$nbignored = 0;
@@ -144,6 +154,14 @@ if (!$error && $massaction == 'confirm_presend') {
 	$listofobjectref = array();
 	$contactidtosend = array();
 	$attachedfilesThirdpartyObj = array();
+	$uploadedfilesfromform = array('paths' => array(), 'names' => array(), 'mimes' => array());
+	$trackidfromform = GETPOST('trackid', 'aZ09');
+	if (!empty($trackidfromform)) {
+		include_once DOL_DOCUMENT_ROOT.'/core/class/html.formmail.class.php';
+		$formmailforattachments = new FormMail($db);
+		$formmailforattachments->trackid = $trackidfromform;
+		$uploadedfilesfromform = $formmailforattachments->get_attached_files();
+	}
 	$oneemailperrecipient = (GETPOSTINT('oneemailperrecipient') ? 1 : 0);
 	$thirdparty = null;
 
@@ -605,6 +623,12 @@ if (!$error && $massaction == 'confirm_presend') {
 					$filepath = $attachedfiles['paths'];
 					$filename = $attachedfiles['names'];
 					$mimetype = $attachedfiles['mimes'];
+
+				if (!empty($uploadedfilesfromform['paths'])) {
+					$filepath = array_merge($filepath, $uploadedfilesfromform['paths']);
+					$filename = array_merge($filename, $uploadedfilesfromform['names']);
+					$mimetype = array_merge($mimetype, $uploadedfilesfromform['mimes']);
+				}
 
 					// Define the trackid when emails sent from the mass action
 					if ($oneemailperrecipient) {
