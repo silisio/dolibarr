@@ -63,7 +63,7 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 				.'var n=document.createElement("div");n.className="opacitymedium small";n.textContent='.$note.';if(target){target.appendChild(n);}'
 				.'if(target && '.$allowupload.'){var wrap=document.createElement("div");wrap.className="margintoponly";'
 					.'wrap.innerHTML="<input type=\"file\" class=\"flat\" id=\"addedfile\" name=\"addedfile\" form=\"mailform\"> '
-						.'<input type=\"hidden\" id=\"msb_addfileflag\" name=\"addfile\" value=\"\" form=\"mailform\"> <input type=\"button\" class=\"button smallpaddingimp\" id=\"addfile\" value="+'.$addfilelabel.'+" onclick=\"var f=document.getElementById(\\\'mailform\\\');var h=document.getElementById(\\\'msb_addfileflag\\\');if(h){h.value=\\\'1\\\';}if(f){f.submit();}\"/> '
+						.'<input type=\"submit\" class=\"button smallpaddingimp\" id=\"addfile\" name=\"addfile\" form=\"mailform\" formnovalidate value="+'.$addfilelabel.'+"/> '
 				.'<span class=\"opacitymedium\">"+'.$uploadhint.'+"</span>";target.appendChild(wrap);}'
 				.'var body=document.getElementById("message");if(body){var box=document.createElement("div");box.className="opacitymedium small margintop";'
 				.'box.innerHTML="<b>"+'.$placeholdersTitle.'+"</b><br><code>"+'.$placeholdersList.'+"</code>";body.parentNode.insertBefore(box, body);}'
@@ -101,45 +101,6 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 			$_POST['addmaindocfile'] = 0;
 			$_REQUEST['addmaindocfile'] = 0;
 		}
-		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL') && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD') && GETPOSTISSET('addfile')) {
-			$hasfile = false;
-			if (!empty($_FILES['addedfile']) && isset($_FILES['addedfile']['error'])) {
-				if (is_array($_FILES['addedfile']['error'])) {
-					$tmpnames = isset($_FILES['addedfile']['tmp_name']) && is_array($_FILES['addedfile']['tmp_name']) ? $_FILES['addedfile']['tmp_name'] : array();
-					foreach ($_FILES['addedfile']['error'] as $idx => $uploaderror) {
-						if ((int) $uploaderror === 0 && !empty($tmpnames[$idx])) {
-							$hasfile = true;
-							break;
-						}
-					}
-				} elseif ((int) $_FILES['addedfile']['error'] === 0 && !empty($_FILES['addedfile']['tmp_name'])) {
-					$hasfile = true;
-				}
-			}
-
-			if ($hasfile) {
-				require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
-				$trackid = GETPOST('trackid', 'aZ09');
-				$uploaddir = $conf->user->dir_output.'/'.$user->id.'/temp';
-				dol_add_file_process($uploaddir, 0, 0, 'addedfile', '', null, $trackid, 0);
-			} else {
-				setEventMessages($langs->trans('MassSubSendMailSelectFileFirst'), null, 'warnings');
-			}
-
-			$massaction = 'presend';
-			$action = '';
-			return 1;
-		}
-
-		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL') && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD') && GETPOSTINT('removedfile') > 0) {
-			require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
-			$trackid = GETPOST('trackid', 'aZ09');
-			dol_remove_file_process(GETPOSTINT('removedfile'), 0, 1, $trackid);
-			$massaction = 'presend';
-			$action = '';
-			return 1;
-		}
-
 		if ($action !== 'setsubscriptionenddate' || GETPOST('confirm', 'aZ09') !== 'yes') {
 			return 0;
 		}
