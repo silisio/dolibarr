@@ -103,11 +103,20 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 		}
 		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL') && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD') && GETPOSTISSET('addfile')) {
 			$hasfile = false;
-			if (!empty($_FILES['addedfile']) && isset($_FILES['addedfile']['name'])) {
-				if (is_array($_FILES['addedfile']['name'])) {
-					$hasfile = (count(array_filter($_FILES['addedfile']['name'])) > 0);
-				} else {
-					$hasfile = !empty($_FILES['addedfile']['name']);
+			$uploadedfilekeys = array('addedfile', 'addedfile[]');
+			foreach ($uploadedfilekeys as $uploadedfilekey) {
+				if (!empty($_FILES[$uploadedfilekey]) && isset($_FILES[$uploadedfilekey]['error'])) {
+					if (is_array($_FILES[$uploadedfilekey]['error'])) {
+						foreach ($_FILES[$uploadedfilekey]['error'] as $uploaderror) {
+							if ((int) $uploaderror !== 4) { // UPLOAD_ERR_NO_FILE
+								$hasfile = true;
+								break 2;
+							}
+						}
+					} elseif ((int) $_FILES[$uploadedfilekey]['error'] !== 4) {
+						$hasfile = true;
+						break;
+					}
 				}
 			}
 			if ($hasfile) {
