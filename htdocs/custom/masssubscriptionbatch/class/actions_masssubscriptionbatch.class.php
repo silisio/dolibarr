@@ -63,7 +63,7 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 				.'var n=document.createElement("div");n.className="opacitymedium small";n.textContent='.$note.';if(target){target.appendChild(n);}'
 				.'if(target && '.$allowupload.'){var wrap=document.createElement("div");wrap.className="margintoponly";'
 					.'wrap.innerHTML="<input type=\"file\" class=\"flat\" id=\"addedfile\" name=\"addedfile\" form=\"mailform\"> '
-					.'<input type=\"submit\" class=\"button smallpaddingimp\" id=\"addfile\" name=\"addfile\" form=\"mailform\" formnovalidate value="+'.$addfilelabel.'+"/> '
+						.'<input type=\"hidden\" id=\"msb_addfileflag\" name=\"addfile\" value=\"\" form=\"mailform\"> <input type=\"button\" class=\"button smallpaddingimp\" id=\"addfile\" value="+'.$addfilelabel.'+" onclick=\"var f=document.getElementById(\\\'mailform\\\');var h=document.getElementById(\\\'msb_addfileflag\\\');if(h){h.value=\\\'1\\\';}if(f){f.submit();}\"/> '
 				.'<span class=\"opacitymedium\">"+'.$uploadhint.'+"</span>";target.appendChild(wrap);}'
 				.'var body=document.getElementById("message");if(body){var box=document.createElement("div");box.className="opacitymedium small margintop";'
 				.'box.innerHTML="<b>"+'.$placeholdersTitle.'+"</b><br><code>"+'.$placeholdersList.'+"</code>";body.parentNode.insertBefore(box, body);}'
