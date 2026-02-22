@@ -358,6 +358,10 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 			$nbcreated++;
 
 			if ($sendmailenabled && !empty($member->email)) {
+				if ($emailmaxperrun > 0 && ($nbsentemail + $nbemailfailed) >= $emailmaxperrun) {
+					$nbemaillimited++;
+					continue;
+				}
 				$listofpaths = array();
 				$listofnames = array();
 				$listofmimes = array();
