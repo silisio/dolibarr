@@ -59,10 +59,10 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 			$this->resprints = '<script>document.addEventListener("DOMContentLoaded",function(){'
 				.'var cb=document.querySelector("input[name=\"addmaindocfile\"]");if(cb){cb.checked=false;cb.disabled=true;}'
 				.'var row=cb?(cb.closest(".tagtr")||cb.closest("tr")):null;'
-				.'var target=row?((row.querySelector(".tagtd:last-child")||row.querySelector("td:last-child")||row)):document.getElementById("mailform");'
+				.'var mailform=document.getElementById("mailform");if(mailform){mailform.enctype="multipart/form-data";mailform.encoding="multipart/form-data";}var target=row?((row.querySelector(".tagtd:last-child")||row.querySelector("td:last-child")||row)):mailform;'
 				.'var n=document.createElement("div");n.className="opacitymedium small";n.textContent='.$note.';if(target){target.appendChild(n);}'
 				.'if(target && '.$allowupload.'){var wrap=document.createElement("div");wrap.className="margintoponly";'
-					.'wrap.innerHTML="<input type=\"file\" class=\"flat\" id=\"addedfile\" name=\"addedfile[]\" multiple form=\"mailform\"> '
+					.'wrap.innerHTML="<input type=\"file\" class=\"flat\" id=\"addedfile\" name=\"addedfile\" form=\"mailform\"> '
 					.'<input type=\"submit\" class=\"button smallpaddingimp\" id=\"addfile\" name=\"addfile\" form=\"mailform\" value="+'.$addfilelabel.'+"/> '
 				.'<span class=\"opacitymedium\">"+'.$uploadhint.'+"</span>";target.appendChild(wrap);}'
 				.'var body=document.getElementById("message");if(body){var box=document.createElement("div");box.className="opacitymedium small margintop";'
@@ -103,38 +103,34 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 		}
 		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL') && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD') && GETPOSTISSET('addfile')) {
 			$hasfile = false;
-			$sourcefilekey = 'addedfile';
-			$uploadedfilekeys = array('addedfile', 'addedfile[]');
-			foreach ($uploadedfilekeys as $uploadedfilekey) {
-				if (!empty($_FILES[$uploadedfilekey]) && isset($_FILES[$uploadedfilekey]['error'])) {
-					if (is_array($_FILES[$uploadedfilekey]['error'])) {
-						$tmpnames = isset($_FILES[$uploadedfilekey]['tmp_name']) && is_array($_FILES[$uploadedfilekey]['tmp_name']) ? $_FILES[$uploadedfilekey]['tmp_name'] : array();
-						foreach ($_FILES[$uploadedfilekey]['error'] as $idx => $uploaderror) {
-							if ((int) $uploaderror === 0 && !empty($tmpnames[$idx])) {
-								$hasfile = true;
-								$sourcefilekey = $uploadedfilekey;
-								break 2;
-							}
+			if (!empty($_FILES['addedfile']) && isset($_FILES['addedfile']['error'])) {
+				if (is_array($_FILES['addedfile']['error'])) {
+					$tmpnames = isset($_FILES['addedfile']['tmp_name']) && is_array($_FILES['addedfile']['tmp_name']) ? $_FILES['addedfile']['tmp_name'] : array();
+					foreach ($_FILES['addedfile']['error'] as $idx => $uploaderror) {
+						if ((int) $uploaderror === 0 && !empty($tmpnames[$idx])) {
+							$hasfile = true;
+							break;
 						}
-					} elseif ((int) $_FILES[$uploadedfilekey]['error'] === 0 && !empty($_FILES[$uploadedfilekey]['tmp_name'])) {
-						$hasfile = true;
-						$sourcefilekey = $uploadedfilekey;
-						break;
 					}
+				} elseif ((int) $_FILES['addedfile']['error'] === 0 && !empty($_FILES['addedfile']['tmp_name'])) {
+					$hasfile = true;
 				}
 			}
+
 			if ($hasfile) {
 				require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
 				$trackid = GETPOST('trackid', 'aZ09');
 				$uploaddir = $conf->user->dir_output.'/'.$user->id.'/temp';
-				dol_add_file_process($uploaddir, 0, 0, $sourcefilekey, '', null, $trackid, 0);
+				dol_add_file_process($uploaddir, 0, 0, 'addedfile', '', null, $trackid, 0);
 			} else {
 				setEventMessages($langs->trans('MassSubSendMailSelectFileFirst'), null, 'warnings');
 			}
+
 			$massaction = 'presend';
 			$action = '';
 			return 1;
 		}
+
 		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL') && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD') && GETPOSTINT('removedfile') > 0) {
 			require_once DOL_DOCUMENT_ROOT.'/core/lib/files.lib.php';
 			$trackid = GETPOST('trackid', 'aZ09');
