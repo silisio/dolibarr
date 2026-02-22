@@ -39,6 +39,9 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL')) {
 			$this->resprints .= '<option value="presend">'.img_picto('', 'email', 'class="pictofixedwidth"').$langs->trans('MassSubSendMailAction').'</option>';
 		}
+		if (getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MEMBERSPDF')) {
+			$this->resprints .= '<option value="preexportmemberspdf">'.img_picto('', 'pdf', 'class="pictofixedwidth"').$langs->trans('MassSubExportMembersPdfAction').'</option>';
+		}
 		return 0;
 	}
 
@@ -68,6 +71,20 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 				.'var body=document.getElementById("message");if(body){var box=document.createElement("div");box.className="opacitymedium small margintop";'
 				.'box.innerHTML="<b>"+'.$placeholdersTitle.'+"</b><br><code>"+'.$placeholdersList.'+"</code>";body.parentNode.insertBefore(box, body);}'
 				.'});</script>';
+			return 0;
+		}
+
+		if ($massaction === 'preexportmemberspdf' && getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MEMBERSPDF')) {
+			$toselect = is_array($parameters['toselect'] ?? null) ? $parameters['toselect'] : array();
+			$fieldsHtml = ''
+				.'<label><input type="checkbox" name="msb_pdf_fields[]" value="ref" checked> '.$langs->trans('MassSubPdfFieldRef').'</label><br>'
+				.'<label><input type="checkbox" name="msb_pdf_fields[]" value="firstname" checked> '.$langs->trans('MassSubPdfFieldFirstName').'</label><br>'
+				.'<label><input type="checkbox" name="msb_pdf_fields[]" value="lastname" checked> '.$langs->trans('MassSubPdfFieldLastName').'</label><br>'
+				.'<label><input type="checkbox" name="msb_pdf_fields[]" value="email" checked> '.$langs->trans('MassSubPdfFieldEmail').'</label><br>'
+				.'<label><input type="checkbox" name="msb_pdf_fields[]" value="type"> '.$langs->trans('MassSubPdfFieldType').'</label><br>'
+				.'<label><input type="checkbox" name="msb_pdf_fields[]" value="datefin"> '.$langs->trans('MassSubPdfFieldEndDate').'</label>';
+			$formquestion = array(array('type' => 'other', 'name' => 'msb_pdf_fields_block', 'label' => $langs->trans('MassSubExportMembersPdfFieldsLabel'), 'value' => $fieldsHtml));
+			$this->resprints = $form->formconfirm($_SERVER['PHP_SELF'], $langs->trans('MassSubExportMembersPdfTitle'), $langs->trans('MassSubExportMembersPdfQuestion', count($toselect)), 'exportmemberspdf', $formquestion, 1, 0, 260, 640, 1);
 			return 0;
 		}
 
@@ -101,6 +118,52 @@ class ActionsMassSubscriptionBatch extends CommonHookActions
 			$_POST['addmaindocfile'] = 0;
 			$_REQUEST['addmaindocfile'] = 0;
 		}
+		if ($action === 'exportmemberspdf' && GETPOST('confirm', 'aZ09') === 'yes') {
+			if (!getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MEMBERSPDF')) {
+				setEventMessages($langs->trans('MassSubExportMembersPdfDisabled'), null, 'errors');
+				return 1;
+			}
+			$fields = GETPOST('msb_pdf_fields', 'array');
+			if (!is_array($fields) || empty($fields)) {
+				$fields = array('ref', 'firstname', 'lastname', 'email');
+			}
+			$allowed = array('ref', 'firstname', 'lastname', 'email', 'type', 'datefin');
+			$fields = array_values(array_intersect($allowed, $fields));
+			$toselect = GETPOST('toselect', 'array');
+			if (!is_array($toselect) || empty($toselect)) {
+				setEventMessages($langs->trans('NoRecordSelected'), null, 'errors');
+				return 1;
+			}
+			require_once DOL_DOCUMENT_ROOT.'/core/lib/pdf.lib.php';
+			$pdf = pdf_getInstance('A4');
+			$pdf->SetCreator('Dolibarr');
+			$pdf->SetAuthor($user->getFullName($langs));
+			$pdf->SetTitle($langs->transnoentities('MassSubExportMembersPdfTitle'));
+			$pdf->SetMargins(10, 10, 10);
+			$pdf->AddPage();
+			$headers = array('ref' => $langs->transnoentities('Ref'), 'firstname' => $langs->transnoentities('Firstname'), 'lastname' => $langs->transnoentities('Lastname'), 'email' => $langs->transnoentities('Email'), 'type' => $langs->transnoentities('Type'), 'datefin' => $langs->transnoentities('DateEnd'));
+			$html = '<h2>'.$langs->transnoentities('MassSubExportMembersPdfTitle').'</h2><table border="1" cellpadding="3"><tr>';
+			foreach ($fields as $fieldkey) { $html .= '<th><b>'.dol_escape_htmltag((string) ($headers[$fieldkey] ?? $fieldkey)).'</b></th>'; }
+			$html .= '</tr>';
+			$member = new Adherent($this->db);
+			$typecache = array();
+			foreach ($toselect as $id) {
+				if ($member->fetch((int) $id) <= 0) continue;
+				if (!isset($typecache[(int) $member->typeid])) { $typeobj = new AdherentType($this->db); $typecache[(int) $member->typeid] = ($typeobj->fetch((int) $member->typeid) > 0) ? $typeobj->libelle : ''; }
+				$row = array('ref' => $member->ref, 'firstname' => $member->firstname, 'lastname' => $member->lastname, 'email' => $member->email, 'type' => $typecache[(int) $member->typeid], 'datefin' => $member->datefin ? dol_print_date($member->datefin, 'day') : '');
+				$html .= '<tr>';
+				foreach ($fields as $fieldkey) { $html .= '<td>'.dol_escape_htmltag((string) ($row[$fieldkey] ?? '')).'</td>'; }
+				$html .= '</tr>';
+			}
+			$html .= '</table>';
+			$pdf->writeHTML($html, true, false, true, false, '');
+			$pdfname = 'members_selection_'.dol_print_date(dol_now(), 'dayhourlog').'.pdf';
+			header('Content-Type: application/pdf');
+			header('Content-Disposition: attachment; filename="'.$pdfname.'"');
+			print $pdf->Output($pdfname, 'S');
+			exit;
+		}
+
 		if ($action !== 'setsubscriptionenddate' || GETPOST('confirm', 'aZ09') !== 'yes') {
 			return 0;
 		}
