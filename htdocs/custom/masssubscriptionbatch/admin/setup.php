@@ -1,0 +1,105 @@
+<?php
+/* Copyright (C) 2026 */
+
+require '../../../main.inc.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
+require_once dol_buildpath('/masssubscriptionbatch/lib/masssubscriptionbatch.lib.php', 0);
+
+$langs->loadLangs(array('admin', 'members', 'masssubscriptionbatch@masssubscriptionbatch'));
+
+if (!$user->admin) {
+	accessforbidden();
+}
+
+$action = GETPOST('action', 'aZ09');
+
+if ($action == 'setdefaultsend') {
+	dolibarr_set_const($db, 'MASSSUBSCRIPTIONBATCH_DEFAULT_SENDMAIL', GETPOSTINT('MASSSUBSCRIPTIONBATCH_DEFAULT_SENDMAIL'), 'yesno', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'MASSSUBSCRIPTIONBATCH_ENABLE_SETENDDATE', GETPOSTINT('MASSSUBSCRIPTIONBATCH_ENABLE_SETENDDATE'), 'yesno', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL', GETPOSTINT('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL'), 'yesno', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD', GETPOSTINT('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD'), 'yesno', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'MASSSUBSCRIPTIONBATCH_ENABLE_MEMBERSPDF', GETPOSTINT('MASSSUBSCRIPTIONBATCH_ENABLE_MEMBERSPDF'), 'yesno', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'MASSSUBSCRIPTIONBATCH_ENABLE_MAILTOBCC', GETPOSTINT('MASSSUBSCRIPTIONBATCH_ENABLE_MAILTOBCC'), 'yesno', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'MASSSUBSCRIPTIONBATCH_EMAILS_PER_RUN', max(0, GETPOSTINT('MASSSUBSCRIPTIONBATCH_EMAILS_PER_RUN')), 'integer', 0, '', $conf->entity);
+	dolibarr_set_const($db, 'MASSSUBSCRIPTIONBATCH_EMAIL_DELAY_MS', max(0, GETPOSTINT('MASSSUBSCRIPTIONBATCH_EMAIL_DELAY_MS')), 'integer', 0, '', $conf->entity);
+	setEventMessages($langs->trans('SetupSaved'), null, 'mesgs');
+}
+
+$page_name = 'MassSubscriptionBatchSetup';
+
+llxHeader('', $langs->trans($page_name));
+
+$linkback = '<a href="'.DOL_URL_ROOT.'/admin/modules.php?restore_lastsearch_values=1">'.$langs->trans('BackToModuleList').'</a>';
+print load_fiche_titre($langs->trans($page_name), $linkback, 'title_setup');
+
+$head = masssubscriptionbatchAdminPrepareHead();
+print dol_get_fiche_head($head, 'settings', $langs->trans('Module106500Name'), -1, 'payment');
+
+print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+print '<input type="hidden" name="token" value="'.newToken().'">';
+print '<input type="hidden" name="action" value="setdefaultsend">';
+
+print '<table class="noborder centpercent">';
+print '<tr class="liste_titre"><td colspan="2">'.$langs->trans('Parameters').'</td></tr>';
+print '<tr class="oddeven">';
+print '<td>'.$langs->trans('MassSubscriptionBatchDefaultSendMail').'</td>';
+print '<td>';
+print '<input type="checkbox" name="MASSSUBSCRIPTIONBATCH_DEFAULT_SENDMAIL" value="1"'.(getDolGlobalInt('MASSSUBSCRIPTIONBATCH_DEFAULT_SENDMAIL') ? ' checked' : '').'>';
+print '</td>';
+print '</tr>';
+
+print '<tr class="oddeven">';
+print '<td>'.$langs->trans('MassSubscriptionBatchEnableSetEndDateMassAction').'</td>';
+print '<td>';
+print '<input type="checkbox" name="MASSSUBSCRIPTIONBATCH_ENABLE_SETENDDATE" value="1"'.(getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_SETENDDATE') ? ' checked' : '').'>';
+print '</td>';
+print '</tr>';
+
+print '<tr class="oddeven">';
+print '<td>'.$langs->trans('MassSubscriptionBatchEnableMassMailMassAction').'</td>';
+print '<td>';
+print '<input type="checkbox" name="MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL" value="1"'.(getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL') ? ' checked' : '').'>';
+print '</td>';
+print '</tr>';
+
+print '<tr class="oddeven">';
+print '<td>'.$langs->trans('MassSubscriptionBatchEnableMassMailUpload').'</td>';
+print '<td>';
+print '<input type="checkbox" name="MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD" value="1"'.(getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MASSMAIL_UPLOAD') ? ' checked' : '').'>';
+print '</td>';
+print '</tr>';
+
+print '<tr class="oddeven">';
+print '<td>'.$langs->trans('MassSubscriptionBatchEnableMembersPdfMassAction').'</td>';
+print '<td>';
+print '<input type="checkbox" name="MASSSUBSCRIPTIONBATCH_ENABLE_MEMBERSPDF" value="1"'.(getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MEMBERSPDF') ? ' checked' : '').'>';
+print '</td>';
+print '</tr>';
+
+print '<tr class="oddeven">';
+print '<td>'.$langs->trans('MassSubscriptionBatchEnableMailtoBccMassAction').'</td>';
+print '<td>';
+print '<input type="checkbox" name="MASSSUBSCRIPTIONBATCH_ENABLE_MAILTOBCC" value="1"'.(getDolGlobalInt('MASSSUBSCRIPTIONBATCH_ENABLE_MAILTOBCC') ? ' checked' : '').'>';
+print '</td>';
+print '</tr>';
+
+print '<tr class="oddeven">';
+print '<td>'.$langs->trans('MassSubscriptionBatchEmailsPerRun').'<br><span class="opacitymedium">'.$langs->trans('MassSubscriptionBatchEmailsPerRunHelp').'</span></td>';
+print '<td><input type="number" min="0" name="MASSSUBSCRIPTIONBATCH_EMAILS_PER_RUN" value="'.getDolGlobalInt('MASSSUBSCRIPTIONBATCH_EMAILS_PER_RUN', 100).'" class="maxwidth100"></td>';
+print '</tr>';
+
+print '<tr class="oddeven">';
+print '<td>'.$langs->trans('MassSubscriptionBatchEmailDelayMs').'<br><span class="opacitymedium">'.$langs->trans('MassSubscriptionBatchEmailDelayMsHelp').'</span></td>';
+print '<td><input type="number" min="0" name="MASSSUBSCRIPTIONBATCH_EMAIL_DELAY_MS" value="'.getDolGlobalInt('MASSSUBSCRIPTIONBATCH_EMAIL_DELAY_MS', 200).'" class="maxwidth100"></td>';
+print '</tr>';
+print '</table>';
+
+print '<div class="center">';
+print '<input class="button button-save" type="submit" value="'.$langs->trans('Save').'">';
+print '</div>';
+print '</form>';
+
+print dol_get_fiche_end();
+
+llxFooter();
+$db->close();
