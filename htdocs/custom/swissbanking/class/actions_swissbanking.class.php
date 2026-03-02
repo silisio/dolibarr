@@ -431,6 +431,7 @@ class ActionsSwissBanking{
 
                 if ($conf->global->SWISSBANKING_QRSLIP_FONT == "1") { $qrfont = 'arial'; $qrfontb = 'arialb'; }
                 elseif ($conf->global->SWISSBANKING_QRSLIP_FONT == "2") { $qrfont = 'frutiger'; $qrfontb = 'frutigerb'; }
+                else { $qrfont = 'helvetica'; $qrfontb = 'helvetica'; }
                 $pdf->AddFont($qrfont);
                 $pdf->AddFont($qrfontb);
                 $pdf->SetFont(pdf_getPDFFont($outputlangs));
@@ -462,16 +463,27 @@ class ActionsSwissBanking{
                   if ($conf->global->SWISSBANKING_PRINT_A4QR_HEADER == 'Yes') {
                     dol_syslog('SwissBanking : Adding Header to DIN A4 QR Bill.', LOG_INFO);
                     $modelpdf = 'pdf_' . $parameters['object']->modelpdf;
-                    $invoicePdfHeader = new ReflectionMethod($modelpdf, '_pagehead');
-                    $invoicePdfHeader->setAccessible(true);
+                    try {
+                      if (class_exists($modelpdf) && method_exists($modelpdf, '_pagehead')) {
+                        $invoicePdfHeader = new ReflectionMethod($modelpdf, '_pagehead');
+                        $invoicePdfHeader->setAccessible(true);
 
-                    if ($conf->global->SWISSBANKING_PRINT_A4QR_ADDRESS == 'Yes') {
-                      $invoicePdfHeader->invokeArgs(new $modelpdf($db), array(&$pdf, $parameters['object'], true, $outputlangs, null));
-                      dol_syslog('SwissBanking : Adding Address to DIN A4 QR Bill.', LOG_INFO);
+                        if ($conf->global->SWISSBANKING_PRINT_A4QR_ADDRESS == 'Yes') {
+                          $invoicePdfHeader->invokeArgs(new $modelpdf($db), array(&$pdf, $parameters['object'], true, $outputlangs, null));
+                          dol_syslog('SwissBanking : Adding Address to DIN A4 QR Bill.', LOG_INFO);
+                        }
+                        else {
+                          $invoicePdfHeader->invokeArgs(new $modelpdf($db), array(&$pdf, $parameters['object'], false, $outputlangs, null));
+                          dol_syslog('SwissBanking : NOT Adding Address to DIN A4 QR Bill.', LOG_INFO);
+                        }
+                      }
+                      else {
+                        dol_syslog('SwissBanking : Unable to load invoice header class/method for model '.$modelpdf, LOG_WARNING);
+                      }
                     }
-                    else {
-                      $invoicePdfHeader->invokeArgs(new $modelpdf($db), array(&$pdf, $parameters['object'], false, $outputlangs, null));
-                      dol_syslog('SwissBanking : NOT Adding Address to DIN A4 QR Bill.', LOG_INFO);
+                    catch (Throwable $e) {
+                      dol_syslog('SwissBanking : A4 header render failed for model '.$modelpdf.' - '.$e->getMessage(), LOG_ERR);
+                      setEventMessages('SwissBanking A4 header render failed: '.$e->getMessage(), array(), 'warnings');
                     }
                   }
 
@@ -501,9 +513,15 @@ class ActionsSwissBanking{
 
                     $addtext = '<table width="' . $conf->global->SWISSBANKING_PAGEFORMATX . ' mm" border="0" cellpadding="0" cellspacing="0">';
                     $addtext .= '<tr><td colspan="3" style="height:' . strval($addtexttcellh) . ' mm !important; min-height:' . strval($addtexttcellh) . ' mm !important;"></td></tr>';
-                    $addtext .= '<tr><td style="width:' . strval($addtextlcellw) . ' mm; height: ' . strval($addtextmcellh) . ' mm !important;"></td><td style="width:' . strval($addtextccellw) . ' mm; height: ' . strval($addtextmcellh) . ' mm !important; text-align:' . $addtextalign . '; border: ' . $addtextborder . '; padding=' . $addtextautopadding . ' mm;">' . str_replace($dolibarrindex . '/viewimage.php?modulepart=medias&amp;entity=1&amp;file=', DOL_DATA_ROOT . '/medias/', $addtexttext) . '</td><td style="width:' . strval($addtextrcellw) . ' mm; height: ' . strval($addtextmcellh) . ' mm !important;"></td></tr></table>';
-                    $pdf->writeHTML($addtext, true, 0, false, false, '');
-                    dol_syslog('SwissBanking : Adding Custom Additional Text to DIN A4 QR Bill.', LOG_INFO);
+                    $addtext .= '<tr><td style="width:' . strval($addtextlcellw) . ' mm; height: ' . strval($addtextmcellh) . ' mm !important;"></td><td style="width:' . strval($addtextccellw) . ' mm; height: ' . strval($addtextmcellh) . ' mm !important; text-align:' . $addtextalign . '; border: ' . $addtextborder . '; padding:' . $addtextautopadding . ' mm;">' . str_replace($dolibarrindex . '/viewimage.php?modulepart=medias&amp;entity=1&amp;file=', DOL_DATA_ROOT . '/medias/', $addtexttext) . '</td><td style="width:' . strval($addtextrcellw) . ' mm; height: ' . strval($addtextmcellh) . ' mm !important;"></td></tr></table>';
+                    try {
+                      $pdf->writeHTML($addtext, true, 0, false, false, '');
+                      dol_syslog('SwissBanking : Adding Custom Additional Text to DIN A4 QR Bill.', LOG_INFO);
+                    }
+                    catch (Throwable $e) {
+                      dol_syslog('SwissBanking : A4 additional text render failed - '.$e->getMessage(), LOG_ERR);
+                      setEventMessages('SwissBanking A4 additional text render failed: '.$e->getMessage(), array(), 'warnings');
+                    }
                   }
                 }
 
@@ -758,7 +776,7 @@ class ActionsSwissBanking{
 
                 $addtext = '<table width="' . $conf->global->SWISSBANKING_PAGEFORMATX . ' mm" border="0" cellpadding="0" cellspacing="0">';
                 $addtext .= '<tr><td colspan="3" style="height:' . strval($addtexttcellh) . ' mm !important; min-height:' . strval($addtexttcellh) . ' mm !important;"></td></tr>';
-                $addtext .= '<tr><td style="width:' . strval($addtextlcellw) . ' mm; height: ' . strval($addtextmcellh) . ' mm !important;"></td><td style="width:' . strval($addtextccellw) . ' mm; height: ' . strval($addtextmcellh) . ' mm !important; text-align:' . $addtextalign . '; border: ' . $addtextborder . '; padding=' . $addtextautopadding . ' mm;">' . str_replace($dolibarrindex . '/viewimage.php?modulepart=medias&amp;entity=1&amp;file=', DOL_DATA_ROOT . '/medias/', $addtexttext) . '</td><td style="width:' . strval($addtextrcellw) . ' mm; height: ' . strval($addtextmcellh) . ' mm !important;"></td></tr></table>';
+                $addtext .= '<tr><td style="width:' . strval($addtextlcellw) . ' mm; height: ' . strval($addtextmcellh) . ' mm !important;"></td><td style="width:' . strval($addtextccellw) . ' mm; height: ' . strval($addtextmcellh) . ' mm !important; text-align:' . $addtextalign . '; border: ' . $addtextborder . '; padding:' . $addtextautopadding . ' mm;">' . str_replace($dolibarrindex . '/viewimage.php?modulepart=medias&amp;entity=1&amp;file=', DOL_DATA_ROOT . '/medias/', $addtexttext) . '</td><td style="width:' . strval($addtextrcellw) . ' mm; height: ' . strval($addtextmcellh) . ' mm !important;"></td></tr></table>';
                 $pdf->writeHTML($addtext, true, 0, false, false, '');
               }
 

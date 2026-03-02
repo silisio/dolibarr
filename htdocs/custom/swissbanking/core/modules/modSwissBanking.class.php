@@ -25,7 +25,7 @@ class modswissbanking extends DolibarrModules{
   public $descriptionlong = "Complete Swiss Banking Solution";
   public $editor_name = "Mercury Labs SAGL";
   public $editor_url = "http://www.mercurylabs.ch";
-  public $version = '1.5.13';
+  public $version = '1.5.14';
   public $const_name = 'MAIN_MODULE_SWISSBANKING';
   public $picto = 'swissbanking@swissbanking';
   public $module_parts = array(
