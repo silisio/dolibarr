@@ -102,7 +102,7 @@ class ActionsSwissBanking{
   }
 
   public function afterPDFCreation($parameters, &$object, &$action) {
-    global $langs, $conf, $db, $user;
+    global $langs, $conf, $db, $user, $mysoc;
     global $hookmanager;
 
     // Loads customer specific languages is available
@@ -324,13 +324,22 @@ class ActionsSwissBanking{
                   $qrcity = $companyaddress[$companyaddresscount - 1];
                 }
 
-                // Add creditor information
+                // Add creditor information (fallback to company values if bank account owner fields are empty)
+                $creditorName = trim((string) $account->proprio);
+                if ($creditorName === '' && !empty($mysoc->name)) $creditorName = trim((string) $mysoc->name);
+                $creditorAddress = trim((string) $qraddress);
+                if ($creditorAddress === '' && !empty($mysoc->address)) $creditorAddress = trim((string) $mysoc->address);
+                $creditorCity = trim((string) $qrcity);
+                if ($creditorCity === '' && (!empty($mysoc->zip) || !empty($mysoc->town))) $creditorCity = trim((string) ($mysoc->zip . ' ' . $mysoc->town));
+                $creditorCountry = trim((string) $account->country_code);
+                if ($creditorCountry === '' && !empty($mysoc->country_code)) $creditorCountry = trim((string) $mysoc->country_code);
+
                 $qrBill->setCreditor(
                   QrBill\DataGroup\Element\CombinedAddress::create(
-                    $account->proprio,
-                    $qraddress,
-                    $qrcity,
-                    $account->country_code
+                    $creditorName,
+                    $creditorAddress,
+                    $creditorCity,
+                    $creditorCountry
                   )
                 );
 
@@ -347,15 +356,21 @@ class ActionsSwissBanking{
                   $debtqraddress = substr($address, 0, 70);
                 }
                 else $debtqraddress = $address;
-                // Add debtor information
-                $qrBill->setUltimateDebtor(
-                  QrBill\DataGroup\Element\CombinedAddress::create(
-                    $company,
-                    $debtqraddress,
-                    $zip . ' ' . $town,
-                    $countrycode
-                  )
-                );
+                // Add debtor information (optional). Avoid sending blank values to validator.
+                $debtorName = trim((string) $company);
+                $debtorStreet = trim((string) $debtqraddress);
+                $debtorCity = trim((string) ($zip . ' ' . $town));
+                $debtorCountry = trim((string) $countrycode);
+                if ($debtorName !== '' && $debtorStreet !== '' && $debtorCity !== '' && $debtorCountry !== '') {
+                  $qrBill->setUltimateDebtor(
+                    QrBill\DataGroup\Element\CombinedAddress::create(
+                      $debtorName,
+                      $debtorStreet,
+                      $debtorCity,
+                      $debtorCountry
+                    )
+                  );
+                }
 
                 // Add payment amount information
                 // What amount is to be paid?
@@ -405,10 +420,13 @@ class ActionsSwissBanking{
                   $qrBill->getQrCode()->writeFile($conf->$element->dir_output . '/' . $filereference . '/qr.png');
                 }
                 catch (Exception $e) {
-                  foreach($qrBill->getViolations() as $violation) {
-                    print $violation->getMessage() . "\n";
+                  $errorMessage = $e->getMessage();
+                  foreach ($qrBill->getViolations() as $violation) {
+                    $errorMessage .= ' ' . $violation->getMessage();
                   }
-                  exit;
+                  dol_syslog('SwissBanking QR generation failed: '.$errorMessage, LOG_ERR);
+                  setEventMessages($outputlangs->transnoentities("Error") . ' SwissBanking QR: ' . $errorMessage, array(), 'errors');
+                  return 0;
                 }
 
                 if ($conf->global->SWISSBANKING_QRSLIP_FONT == "1") { $qrfont = 'arial'; $qrfontb = 'arialb'; }
