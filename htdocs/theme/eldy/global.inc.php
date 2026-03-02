@@ -886,6 +886,12 @@ input#onlinepaymenturl, input#directdownloadlink {
 	padding: 20px 20px 20px 20px;
 	border-radius: 8px;
 }
+.formborder {
+	border: solid 2px #444;
+	padding: 20px;
+	border-radius: 8px;
+	background-color: #fffff4;
+}
 
 div#moretabsList, div#moretabsListaction {
 	z-index: 5;
@@ -1370,7 +1376,7 @@ div.urllink input {
 }
 
 i.fa-mars::before, i.fa-venus::before, i.fa-genderless::before, i.fa-transgender::before  {
-	color: #888 !important;
+	/* color: #888 !important; */
 	opacity: 0.4;
 	padding-<?php echo $left; ?>: 3px;
 }
@@ -4230,7 +4236,7 @@ div.popuptab {
 /* ============================================================================== */
 
 div.tabsAction {
-	margin: 20px 0em 30px 0em;
+	margin: 20px 0em 40px 0em;
 	padding: 0em 0em;
 	text-align: right;
 }
@@ -5775,6 +5781,15 @@ div.boximport {
 .product_line_stock_too_low { color: var(--productlinestocktoolow); }
 
 .fieldrequired { font-weight: bold; color: var(--fieldrequiredcolor) !important; }
+#tablesubscribe .fieldrequired {
+	font-weight: inherit !important;
+	color: inherit !important;
+}
+#tablesubscribe .fieldrequired:after {
+	content: " *";
+	color: #660000;
+	font-weight: bold;
+}
 
 td.widthpictotitle, .table-fiche-title img.widthpictotitle { width: 34px; text-align: <?php echo $left; ?>; }
 span.widthpictotitle { font-size: 1.5em; }
@@ -7251,7 +7266,9 @@ div#ecm-layout-center {
 	top: auto !important;
 	bottom: 4px !important;
 <?php } ?>
+	<?php if (getDolGlobalString('MAIN_JQUERY_JNOTIFY_UNDER_MENU')) { ?>
 	top: <?php print $disableimages ? '32' : ($heightmenu+4); ?>px;
+	<?php } ?>
 	text-align: center;
 	min-width: <?php echo $dol_optimize_smallscreen ? '200' : '480'; ?>px;
 	width: auto;
