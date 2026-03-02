@@ -25,7 +25,7 @@ class modswissbanking extends DolibarrModules{
   public $descriptionlong = "Complete Swiss Banking Solution";
   public $editor_name = "Mercury Labs SAGL";
   public $editor_url = "http://www.mercurylabs.ch";
-  public $version = '1.5.11';
+  public $version = '1.5.14';
   public $const_name = 'MAIN_MODULE_SWISSBANKING';
   public $picto = 'swissbanking@swissbanking';
   public $module_parts = array(
@@ -51,6 +51,7 @@ class modswissbanking extends DolibarrModules{
   public $conflictwith = array();
   public $phpmin = array(7, 3);
   public $need_dolibarr_version = array(13, 0);
+  public $max_dolibarr_version = array(22, 99);
   public $langfiles = array('swissbanking@swissbanking');
   public $const = array();
   public $tabs = array();
